@@ -120,3 +120,30 @@ sudo ./install.cirrus.driver.sh -i
 sudo ./install.cirrus.driver.sh -r
 ```
 
+Troubleshooting:
+-------------
+
+### Static / Crackling Distortion when Adjusting Volume
+
+Because the CS8409 is a digital bridge to smart I2S amplifiers designed for fixed hardware gain (macOS CoreAudio performs 100% of volume scaling in software), hardware volume stepping in ALSA/PulseAudio and timer-based scheduling (`tsched`) cause zipper noise and buffer rewinds.
+
+To resolve:
+1. **Disable timer-based scheduling (`tsched=0`) in PulseAudio**:
+   In `/etc/pulse/default.pa`:
+   ```text
+   load-module module-udev-detect tsched=0
+   ```
+2. **Use software volume scaling**:
+   In `/usr/share/pulseaudio/alsa-mixer/paths/analog-output.conf.common`, under `[Element PCM]`:
+   ```ini
+   [Element PCM]
+   switch = mute
+   volume = ignore
+   ```
+3. **Disable audio power saving**:
+   In `/etc/modprobe.d/cs8409.conf`:
+   ```text
+   options snd_hda_intel power_save=0 power_save_controller=N
+   ```
+
+
